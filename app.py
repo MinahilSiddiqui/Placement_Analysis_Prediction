@@ -7,7 +7,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-import joblib
 from scipy.stats import chi2_contingency, spearmanr
 import matplotlib.pyplot as plt
 
@@ -25,28 +24,39 @@ except FileNotFoundError:
 
 # Exploratory Data Analysis (EDA)
 st.markdown("## Exploratory Data Analysis (EDA)")
-st.write("Shape of the dataset:", df.shape)
-st.write("Dataset Info:")
+st.markdown("### Shape of the dataset:")
+r,c=df.shape
+st.write(f"Number of rows: {r}, Number of columns: {c}")
+st.markdown("### Dataset Information:")
 st.text(df.info())
-st.write("Columns in the dataset:", df.columns)
-st.write("Description of the dataset:")
+st.markdown("Columns in the dataset:")
+st.write(df.columns)
+st.markdown("### Description of the dataset:")
 st.write(df.describe())
 
 # Data Cleaning
 st.markdown("## Data Cleaning")
-st.write("Missing values in the dataset:")
+st.markdown("### Missing values in the dataset:")
 st.write(df.isnull().sum())
-st.write("Duplicate rows in the dataset:", df.duplicated().sum())
-st.write("Unique values in 'PlacementStatus':", df['PlacementStatus'].unique())
+st.markdown("### Duplicate rows in the dataset:")
+st.write(df.duplicated().sum())
+# Display unique values for specific columns
+columns_to_check = ["ExtracurricularActivities", "PlacementTraining", "PlacementStatus"]
+for col in columns_to_check:
+    unique_values = df[col].unique()
+    st.subheader(f"Unique Values in '{col}':")
+    st.write(unique_values)
 
 # Define Categorical and Numerical Columns
 categorical_columns = df.select_dtypes(include=['object']).columns
 numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+numerical_columns = numerical_columns.drop('StudentID')
 
 # Univariate Analysis: Categorical Data
-st.markdown("## Univariate Analysis: Categorical Data")
+st.markdown("## Univariate Analysis")
+st.markdown("### Categorical Data")
 num_rows = (len(categorical_columns) + 2) // 3
-fig, axes = plt.subplots(num_rows, 3, figsize=(12, 10))
+fig, axes = plt.subplots(num_rows, 3, figsize=(9,5))
 axes = axes.flatten()
 
 for i, col in enumerate(categorical_columns):
@@ -61,8 +71,8 @@ plt.tight_layout()
 st.pyplot(fig)
 
 # Univariate Analysis: Numerical Data
-st.markdown("## Univariate Analysis: Numerical Data")
-fig, axes = plt.subplots((len(numerical_columns) + 2) // 3, 3, figsize=(15, 10))
+st.markdown("### Numerical Data")
+fig, axes = plt.subplots((len(numerical_columns) + 2) // 3, 3, figsize=(13,9))
 axes = axes.flatten()
 
 for i, col in enumerate(numerical_columns):
@@ -75,8 +85,50 @@ for j in range(i + 1, len(axes)):
 plt.tight_layout()
 st.pyplot(fig)
 
+# Bivariate Analysis
+st.markdown("## Bivariate Analysis")
+st.markdown("### Categorical Data vs. Placement Status")
+# Plot bar graphs
+fig, axes = plt.subplots(
+    nrows=((len(numerical_columns[1:]) + 2) // 3),  # Flexible number of rows
+    ncols=3,
+    figsize=(15, 10)
+)
+axes = axes.flatten()
+
+for i, col in enumerate(numerical_columns[1:], start=0):  # Exclude 'StudentID'
+    sns.barplot(
+        x=df['PlacementStatus'],
+        y=df[col],
+        hue=df['PlacementStatus'],
+        ax=axes[i],
+        dodge=False  # Prevent duplicated legends
+    )
+    axes[i].set_title(f'Average {col} by Placement Status')
+    axes[i].set_xlabel('Placement Status')
+    axes[i].set_ylabel(f'Average {col}')
+
+# Hide unused subplots
+for j in range(i + 1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+
+# Streamlit display
+st.pyplot(fig)
+
+# Calculate mean, median, and sum for numerical features by PlacementStatus
+grouped_stats = df.groupby('PlacementStatus')[numerical_columns].agg(['mean', 'median'])
+
+# Streamlit app
+st.title("Grouped Statistics for Numerical Features by Placement Status")
+
+st.write("### Aggregated Statistics (Mean, Median, Sum):")
+st.dataframe(grouped_stats.style.format(precision=2))
+
 # Multivariate Analysis: Pair Plot
-st.markdown("## Multivariate Analysis: Pair Plot")
+st.markdown("## Multivariate Analysis")
+st.markdown("### Pair Plot")
 try:
     fig = sns.pairplot(df, hue="PlacementStatus", diag_kind="kde", palette="GnBu")
     st.pyplot(fig)
@@ -84,7 +136,8 @@ except Exception as e:
     st.error(f"Error in pair plot generation: {e}")
 
 # Statistical Analysis: Correlation Heatmap
-st.markdown("## Statistical Analysis: Correlation Heatmap")
+st.markdown("## Statistical Analysis")
+st.markdown("### Correlation Heatmap")
 try:
     fig, ax = plt.subplots(figsize=(10, 8))
     numerical_df = df.select_dtypes(include=['int64', 'float64']).drop('StudentID', axis=1, errors='ignore')
@@ -97,6 +150,7 @@ except Exception as e:
 
 # Chi-Square Test
 st.markdown("## Chi-Square Test")
+st.markdown("### Chi-Square Test for Categorical Variables")
 column1 = 'PlacementTraining'
 column2 = 'PlacementStatus'
 try:
