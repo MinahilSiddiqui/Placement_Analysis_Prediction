@@ -1,9 +1,5 @@
 ### **Placement Data Analysis and Prediction**
 
----
-
-## **Placement Data Analysis and Prediction**
-
 This project implements an end-to-end solution for analyzing placement data and predicting outcomes using machine learning models. It is built using Python and integrates with Streamlit for an interactive user interface.
 
 ---
@@ -50,7 +46,7 @@ This project implements an end-to-end solution for analyzing placement data and 
 
    ```bash
    git clone https://github.com/MinahilSiddiqui/Placement_Analysis_Prediction.git
-   cd placement-prediction
+   cd Placement Analysis and Prediction
    ```
 
 2. Install the dependencies:
